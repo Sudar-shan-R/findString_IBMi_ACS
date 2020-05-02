@@ -1,0 +1,60 @@
+<HAScript name="promptSearchString"
+          description="Prompt User to Enter a Search String and then execute the searchString macro"
+          creationdate="2019-09-29"
+          author="Sudarshan Ramalingam"
+          usevars="true">
+    
+    <!-- See the accompaning README.md for information on how to set up and use this macro-->
+    
+    <!-- Import Java Classes. 
+         1. String class is used for case-conversion and for string search 
+         2. System class is used to retrieve the current user on the client. 
+             This value will be used to determine the path of the macro to create the parmFile that will store the search string.
+         3. RandomAccessFile class is used to create the file and perform I-O Operations 
+    -->
+    
+    <import>
+        <type class="java.lang.String"         name="JString" />
+        <type class="java.lang.System"         name="JSystem" />
+        <type class="java.io.RandomAccessFile" name="JRndAccf" />
+    </import>
+
+    <vars>
+        <create name="$parmFileName$"  type="string"   value="$JSystem.getProperty('java.io.tmpdir')$ + 'findStringParms.txt'" />
+        <create name="$parmFile$"     type="JRndAccf" value="$new JRndAccf($parmFileName$, 'rw')$" />
+        <create name="$searchString$" type="string"   value="" />
+        <create name="$parmsFound$"   type="integer"  value="0"/>    
+    </vars>
+            
+    <screen name="Screen1" entryscreen="true" exitscreen="true" transient="false">
+        <description >
+            <oia status="NOTINHIBITED"/>
+        </description>
+        <actions>
+
+            <prompt name="'Enter you search string : '" row="0" col="0" len="32" assigntovar="$searchString$" varupdateonly="true" />
+        
+            <!-- If parmFile already exists and has value (data length > 0 ), 
+                 clear the contents of the file so that we can save the new search string -->
+            <varupdate name="$parmsFound$" value="$parmFile.length()$" />            
+            <if condition="$parmsFound$ > 0">
+                <perform value="$parmFile.setLength(0)$" />
+            </if>
+
+            <!-- Convert the search string to upper-case to allow case insenstive search -->
+            <varupdate name="$searchString$" value="$($new JString($searchString$)$).toUpperCase()$" />
+            
+            <!-- Write the search String to parmFile. This is done to allow repeated search without prompting for search string everytime -->
+            <perform value="$parmFile.writeBytes($searchString$)$" />
+            <perform value="$parmFile.close()$" />
+    
+            <!-- Set cursor to start of the screen to scan the entire screen -->
+            <input value="" row="1" col="1" movecursor="true" />
+            
+            <!-- Play another macro to perform the String Search -->
+            <playmacro name="searchString.mac" transfervars="Transfer"/>
+                      
+        </actions>
+    </screen>
+
+</HAScript>

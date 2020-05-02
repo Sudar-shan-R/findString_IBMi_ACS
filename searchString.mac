@@ -1,0 +1,96 @@
+<HAScript name="searchString" usevars="true" pausetime="50">
+
+    <import>
+        <type class="java.lang.String"         name="JString" />
+        <type class="java.lang.System"         name="JSystem" />
+        <type class="java.io.RandomAccessFile" name="JRndAccf" />
+    </import>
+    
+    <vars>
+        <create name="$exitScreen$"         type="boolean"  value="false" />
+        <create name="$parmFileName$"       type="string"   value="$JSystem.getProperty('java.io.tmpdir')$ + 'findStringParms.txt'" />
+        <create name="$parmFile$"           type="JRndAccf" value="$new JRndAccf($parmFileName$, 'r')$" />
+        <create name="$searchString$"       type="string"   value=""/>
+        <create name="$screenData$"         type="string"   value=""/>
+        <create name="$previousScreenData$" type="string"   value=""/>
+        <create name="$parmsFound$"         type="integer"  value="0"/>
+        <create name="$screenRows$"         type="integer"  value="$HMLPSUtil.getSizeRows()$"/>
+        <create name="$screenCols$"         type="integer"  value="$HMLPSUtil.getSizeCols()$"/>
+        <create name="$screenSize$"         type="integer"  value="$HMLPSUtil.getSize()$"/>
+        <create name="$searchResultIndex$"  type="integer"  value="0" />
+        <create name="$searchResultCol$"    type="integer"  value="0" />
+        <create name="$searchResultRow$"    type="integer"  value="0" />
+        <create name="$searchStringLength$" type="integer"  value="0" />
+    </vars>
+    
+    <screen name="Screen1" entryscreen="true" exitscreen="false" transient="false">
+        <description >
+            <oia status="NOTINHIBITED"/>
+        </description>
+        <actions>
+            
+            <!-- Read the parmFile to retrieve the search string -->
+            <varupdate name="$parmsFound$" value="$parmFile.length()$" />
+            
+            <!-- If search string is found, get its length -->
+            <if condition="$parmsFound$ > 0">
+                <varupdate name="$searchString$" value="$parmFile.readLine()$" />
+                <varupdate name="$searchStringLength$" value="$($new JString($searchString$)$).length()$" />
+            </if>
+            <perform value="$parmFile.close()$" />
+            
+            <extract name="'screenData'" planetype="TEXT_PLANE" srow="1" scol="1" erow="$screenRows$" ecol="$screenCols$" assigntovar="$screenData$" />
+            <varupdate name="$screenData$" value="$($new JString($screenData$)$).toUpperCase()$"/>
+                        
+        </actions>
+        <nextscreens timeout="0">
+            <nextscreen name="Screen2" />
+        </nextscreens>
+    </screen>
+    
+    
+    <screen name="Screen2" entryscreen="false" exitscreen="$exitScreen$" transient="false">
+        <description >
+            <oia status="NOTINHIBITED"/>
+        </description>
+        <actions>
+            
+            <!-- Using Java method indexOf (Class String), search the screen data for the search-string. 
+                 On repeated search, set from-index of search position to the cursor position(Note: Java index starts at 0).  -->
+            <varupdate name="$searchResultIndex$" value="$($new JString($screenData$)$).indexOf($searchString$, $HMLPSUtil.getCursorPos()$)$ + 1" />
+            
+            <!-- If search string is found on screen, move the cursor to result position and exit macro -->
+            <if condition="($searchResultIndex$ > 0) &amp;&amp; ($previousScreenData$ != $screenData$)">
+                <varupdate name="$searchResultRow$" value="$HMLPSUtil.convertPosToRow($searchResultIndex$)$" />
+                <varupdate name="$searchResultCol$" value="$HMLPSUtil.convertPosToCol($searchResultIndex$)$" />
+                <boxselection type="SELECT" srow="$searchResultRow$" scol="$searchResultCol$" erow="$searchResultRow$" ecol="$searchStringLength$ + $searchResultCol$ - 1" />
+                    <pause value="300" />
+                <boxselection type="DESELECT" />
+                <varupdate name="$exitScreen$" value="true" />
+            </if>
+            
+            <!-- If search string is not found on screen, send [page down] key stroke and let the macro loop over.
+                 To avoid infinite loop, check if any of end of list condition has reached and terminate the loop. -->
+            <else>
+                <input value="'[pagedn]'"/>
+                <pause value="20" />
+                <input value="" row="1" col="1" movecursor="true" />
+                <varupdate name="$searchResultIndex$" value="0" />
+                <varupdate name="$previousScreenData$" value="$screenData$" />
+                <extract name="'screenData'" planetype="TEXT_PLANE" srow="1" scol="1" erow="$screenRows$" ecol="$screenCols$" assigntovar="$screenData$" />
+                <varupdate name="$screenData$" value="$($new JString($screenData$)$).toUpperCase()$"/>
+            </else>
+
+            <!-- Exit macro if we can't find the search text and we can't seem to rollup any further. -->
+            <if  condition="($previousScreenData$ == $screenData$)" >
+                <varupdate name="$exitScreen$" value="true" />
+                <message value="'End of Search. Cannot find anymore occurence of the text : ' + $searchString$" />
+            </if>
+            
+        </actions>
+        <nextscreens timeout="0">
+            <nextscreen name="Screen2" />
+        </nextscreens>
+    </screen>
+    
+</HAScript>
