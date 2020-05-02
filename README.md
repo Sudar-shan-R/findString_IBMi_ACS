@@ -14,7 +14,7 @@ I wrote this macro when I had to eye-ball search a very very long list of module
 
 Installation Instructions:
 =================================
-1) Navigate to the ACS macro folder. For Windows, this would typically be "C:\Users\%username%\Documents\ibm\iAccessClient\Emulator\"
+1) Navigate to the ACS macro folder. For Windows, this would typically be "C:\Users\\%username%\Documents\ibm\iAccessClient\Emulator\"
 2) Save the 'promptSearchString.mac' and 'searchString.mac' in the ACS Macro folder.
 3) In the ACS Emulator session, navigate to 'Edit -> Preferences -> Keyboard -> Key Assignment Tab -> Category = Macros'
 4) Select 'promptSearchString.mac' and click 'Assign a Key' and press ctrl+F (or any other valid combination you prefer)
